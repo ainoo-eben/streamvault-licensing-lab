@@ -7,7 +7,7 @@
 !.env.example
 
 # --- Data fetched from the API ---
-data/input/
+data/input/id_list.csv
 data/raw/
 data/processed/
 
