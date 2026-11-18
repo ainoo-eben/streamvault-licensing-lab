@@ -1,0 +1,31 @@
+.DS_Store
+
+
+# --- Secrets (most important) ---
+.env
+*.env
+!.env.example
+
+# --- Data fetched from the API ---
+data/input/
+data/raw/
+data/processed/
+
+# --- Regenerated outputs ---
+outputs/
+
+# --- Python environment and caches ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.pyc
+
+
+# --- Windows / editor clutter ---
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

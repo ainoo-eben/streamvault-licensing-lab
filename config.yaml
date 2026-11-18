@@ -1,0 +1,23 @@
+tmdb:
+  api_key_env: TMDB_API_KEY
+  base_url: "https://api.themoviedb.org/3"
+  rate_limit_per_10s: 35
+  retries: 3
+  timeout_s: 30
+
+windows:
+  all_years: [1900, 2099]
+  since_2000: [2000, 2099]
+
+hit:
+  min_votes: 1000
+  min_rating: 7.0
+
+talent:
+  min_films_director: 3
+  min_films_actor: 5
+
+data:
+  input_csv: data/input/id_list.csv
+  raw_dir: data/raw
+  processed_dir: data/processed
