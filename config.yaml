@@ -12,10 +12,18 @@ windows:
 hit:
   min_votes: 1000
   min_rating: 7.0
+  commercial_bar: "revenue > budget"
 
 talent:
   min_films_director: 3
   min_films_actor: 5
+
+adjusted_rating:
+  m: 1000
+  c: 6.0
+
+franchise:
+  min_entries_on_list: 2
 
 data:
   input_csv: data/input/id_list.csv
