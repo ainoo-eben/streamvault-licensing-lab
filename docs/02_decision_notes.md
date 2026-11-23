@@ -4,7 +4,7 @@
 - All years: every release year in the input.
 - Since 2000: releases from 2000 onward only.
 
-## Field selection (Step 3)
+## Field selection
 Kept (helps answer "what is worth licensing?"):
 
 | Field | Why it matters | Caveat |
@@ -18,13 +18,13 @@ Kept (helps answer "what is worth licensing?"):
 
 Left out on purpose: TMDb's `popularity` field (daily snapshot, not a stable property of the film).
 
-## Success metric (Step 9)
+## Success metric
 - **Headline:** Hit rate. A film is a hit if it clears a commercial bar (revenue > budget, i.e. profitable) AND an audience bar (vote_average >= min_rating with vote_count >= min_votes). Compare hit share in bundles (franchise collections) vs standalones. Speaks directly to the "weak middle entries" argument.
 - **Audience signal:** Adjusted rating = Bayesian average pulling low-vote films toward the mean: (v/(v+m))*R + (m/(v+m))*C, with m = min_votes, C = overall mean vote_average.
 - **Sensitivity runs:** ROI (revenue/budget), absolute profit (revenue - budget), and a standardized composite. Report whether the recommendation holds under each.
 - Stated plainly in the memo: no licensing cost and no StreamVault viewing data exist, so every metric is a proxy.
 
-## Judgement calls (Step 10)
+## Judgement calls
 - Zero/missing money: treated as unknown, never as zero; excluded from commercial metrics; count reported. (N/A here — no zeros in this data, but rule stands for reruns.)
 - Franchise definition: a film is a franchise member if `belongs_to_collection` is not null. Full collection completeness not verified (one API call per collection needed) — treated as a sensitivity, not a blocker.
 - Partial bundle: a collection counts as a franchise bundle only if >= 2 of its entries are on our list; singletons treated as standalone.

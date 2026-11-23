@@ -24,13 +24,13 @@ Ids look synthetic/sequential (8471293/8471294, 9412887/9412888, 7733901) — li
 - By `(title, release year)`: none.
 No duplicate films to merge.
 
-## Raw JSON structure (Step 1)
+## Raw JSON structure
 - **Details (`/movie/{id}`):** one object per film -> one row per film. Top-level scalar fields (title, release_date, budget, revenue, vote_average, vote_count, runtime, status, original_language, adult) plus nested `belongs_to_collection` (dict or None) and `genres` (list).
 - **Credits (`/movie/{id}/credits`):** one object with `cast` and `crew` lists -> many rows per film (one per person). Directors are not a field; they are `crew` entries where `job == "Director"` (a film can have more than one).
 - Hence details -> `films` table (1 row/film) and credits -> `credits` table (1 row/film-person).
 - 404s for removed/placeholder titles; recorded in `data/processed/fetch_ledger.csv`.
 - Missing crew/cast fields null-filled.
-- Zero/missing budget and revenue treated as unknown, never as zero (decided in Phase 3).
+- Zero/missing budget and revenue treated as unknown, never as zero.
 - Partial franchises: collection shows only a film's own collection, not whether all entries are on the list.
 
 ## Summary

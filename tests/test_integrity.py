@@ -46,8 +46,11 @@ def test_raw_files_not_overwritten() -> None:
         assert data.get("id") == int(f.stem)
 
 
-def test_ledger_reconciles(tmp_path) -> None:
-    ledger = tmp_path / "fetch_ledger.csv"
-    ledger.write_text("id,status\n1,ok\n2,ok\n3,404\n", encoding="utf-8")
-    statuses = pd.read_csv(ledger)["status"].value_counts().to_dict()
-    assert statuses.get("ok", 0) + statuses.get("404", 0) == 3
+def test_ledger_totals_reconcile() -> None:
+    ledger = pd.read_csv("data/processed/fetch_ledger.csv")
+    assert len(ledger) == 126
+    counts = ledger["status"].value_counts().to_dict()
+    assert counts.get("ok", 0) == 112
+    assert counts.get("404", 0) == 5
+    assert counts.get("invalid", 0) == 3
+    assert counts.get("duplicate", 0) == 6
