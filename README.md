@@ -21,16 +21,13 @@ src/checks.py  -> reconciliation + join-integrity assertions (fail loudly)
         v
 src/metrics.py + src/analysis.py  -> outputs/tables/{window_comparison,bundle_summary,shortlist,sensitivity}.csv
 src/talent.py  -> outputs/tables/talent_read.csv
-src/report.py  -> outputs/run_log.txt + outputs/data_quality_report.txt
-        |
-        v
-docs/  -> 01_data_diagnosis.md, 02_decision_notes.md, 03_client_memo.md, 04_improvement.md
+src/report.py + run_all.py -> outputs/data_quality_report.txt + outputs/run_log.txt
 ```
 
-- `config.yaml` holds every tunable number (windows, hit thresholds, min votes, min films per director/actor, rate limit, retries). Change a decision there, not in code.
+- `config.yaml` holds the tunable numbers (windows, hit thresholds, minimum film counts, talent shrinkage prior, rate limit, retries). Change a decision there, not in code.
 - `notebooks/00_first_look.ipynb` is exploratory only; nothing in the pipeline depends on it.
 - `docs/adr/` holds Architecture Decision Records (field selection, missing-film handling).
-- `tests/test_integrity.py` guards row counts, no dropped/duplicated films, ledger reconciliation.
+- Tests use temporary fixtures; they do not depend on ignored local caches or generated reports.
 
 ## Reproduce on your own machine
 
@@ -46,23 +43,23 @@ docs/  -> 01_data_diagnosis.md, 02_decision_notes.md, 03_client_memo.md, 04_impr
    copy .env.example .env         # Windows
    # cp .env.example .env         # macOS/Linux
    ```
-3. Put your ids in `data/input/id_list.csv` (one `tmdb_id` per row). This is the only file you swap each cycle.
+3. If you have the quarterly candidate list, copy it to `data/input/id_list.csv` (one `tmdb_id` per row). That client-specific file is intentionally ignored by Git. On a fresh clone without it, the pipeline uses the tracked five-title `data/input/id_sample.csv`. The sample keeps the workflow runnable without editing code; use the actual candidate list for any client recommendation.
 4. Run the whole pipeline:
    ```bash
-   make all                       # or: python run_all.py
+   python run_all.py              # or: make all
    ```
-   This runs fetch -> tidy -> checks -> analysis -> talent -> report and writes `data/processed/`, `outputs/`, and refreshes `docs/`.
+   This runs fetch -> tidy -> checks -> analysis -> talent -> report and writes `data/processed/` and `outputs/`. The diagnostics and run log use counts and elapsed time from that run. Stale cache files from prior lists are ignored during flattening. The client memo in `docs/` is a reviewed deliverable and is not rewritten automatically.
 
 5. Verify:
    ```bash
    .venv\Scripts\python.exe -m pytest tests/ -q
    ```
-   Expected: 6 passed.
+   Tests run offline and do not require TMDB credentials or prior pipeline outputs.
 
 ## Key results (this cycle)
 - 126 input rows -> 117 unique valid ids -> 112 films (5 returned 404).
-- Standalones edge out bundles on hit rate in both windows (all years 0.96 vs 0.72; 2000+ 0.73 vs 0.68). Recommendation is metric-sensitive: ROI/profit favor franchises due to blockbuster outliers.
-- Shortlist: 3 franchises (The Godfather, The Dark Knight, LOTR:ROTK) + 5 standalones (Shawshank, Schindler's List, Interstellar, Spirited Away, Pulp Fiction).
+- Standalones edge out franchise films on the film-weighted hit rate in both windows (all years 96.0% vs 72.4%; 2000+ 73.3% vs 71.4%). These rates exclude titles with missing or non-positive budget/revenue. The bundle table reports each franchise's hit rate and weakest listed entry. Recommendation is metric-sensitive: ROI/profit favor franchises due to blockbuster outliers.
+- Shortlist: 3 franchise packages (The Lord of the Rings, The Godfather, The Dark Knight) + 5 standalones (Shawshank, Schindler's List, Interstellar, Spirited Away, Pulp Fiction). Package selection is based only on titles in the candidate list; collection completeness is unverified.
 - Talent read: 19 directors/actors meeting min-count rules.
 
 ## Where to look

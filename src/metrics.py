@@ -5,16 +5,26 @@ from __future__ import annotations
 import pandas as pd
 
 
+def financial_data_available(frame: pd.DataFrame) -> pd.Series:
+    return (
+        frame["budget"].notna()
+        & frame["revenue"].notna()
+        & frame["budget"].gt(0)
+        & frame["revenue"].gt(0)
+    )
+
+
 def is_hit(frame: pd.DataFrame, min_votes: int = 1000, min_rating: float = 7.0) -> pd.Series:
     commercial = frame["revenue"] > frame["budget"]
     audience = (frame["vote_count"] >= min_votes) & (frame["vote_average"] >= min_rating)
-    return commercial & audience
+    return financial_data_available(frame) & commercial & audience
 
 
 def hit_rate(frame: pd.DataFrame, min_votes: int = 1000, min_rating: float = 7.0) -> float:
-    if frame.empty:
+    eligible = frame.loc[financial_data_available(frame)]
+    if eligible.empty:
         return 0.0
-    return float(is_hit(frame, min_votes, min_rating).mean())
+    return float(is_hit(eligible, min_votes, min_rating).mean())
 
 
 def adjusted_rating(vote_average: float, vote_count: int, m: int = 1000, c: float = 6.0) -> float:
@@ -30,8 +40,8 @@ def add_adjusted_rating(frame: pd.DataFrame, m: int = 1000, c: float = 6.0) -> p
 
 
 def roi(frame: pd.DataFrame) -> pd.Series:
-    return frame["revenue"] / frame["budget"].replace(0, pd.NA)
+    return (frame["revenue"] / frame["budget"]).where(financial_data_available(frame))
 
 
 def profit(frame: pd.DataFrame) -> pd.Series:
-    return frame["revenue"] - frame["budget"]
+    return (frame["revenue"] - frame["budget"]).where(financial_data_available(frame))

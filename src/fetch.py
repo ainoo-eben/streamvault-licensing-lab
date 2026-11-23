@@ -16,6 +16,7 @@ CONFIG_PATH = Path("config.yaml")
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
 INPUT_CSV = Path("data/input/id_list.csv")
+SAMPLE_INPUT_CSV = Path("data/input/id_sample.csv")
 LEDGER_PATH = PROCESSED_DIR / "fetch_ledger.csv"
 BASE_URL = "https://api.themoviedb.org/3"
 
@@ -40,6 +41,18 @@ def load_api_key(config: dict[str, Any]) -> str:
     if not key or key == "your_key_here":
         raise RuntimeError(f"Set {env_name} in .env (copy from .env.example)")
     return key
+
+
+def resolve_input_path(config: dict[str, Any]) -> Path:
+    configured = Path(config.get("data", {}).get("input_csv", INPUT_CSV))
+    if configured.is_file():
+        return configured
+    if configured == INPUT_CSV and SAMPLE_INPUT_CSV.is_file():
+        return SAMPLE_INPUT_CSV
+    raise FileNotFoundError(
+        f"Input CSV not found: {configured}. Add the candidate list or restore "
+        f"{SAMPLE_INPUT_CSV} for a sample run."
+    )
 
 
 def read_input_rows(path: Path = INPUT_CSV) -> list[tuple[Any, str]]:
@@ -135,7 +148,7 @@ def main() -> None:
     (RAW_DIR / "credits").mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    input_rows = read_input_rows()
+    input_rows = read_input_rows(resolve_input_path(config))
     seen: set[int] = set()
     ledger_rows: list[dict[str, Any]] = []
 

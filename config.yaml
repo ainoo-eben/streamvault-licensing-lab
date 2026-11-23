@@ -17,6 +17,7 @@ hit:
 talent:
   min_films_director: 3
   min_films_actor: 5
+  shrinkage_prior_films: 3
 
 adjusted_rating:
   m: 1000

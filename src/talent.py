@@ -7,6 +7,11 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+try:
+    from src.metrics import financial_data_available, is_hit
+except ModuleNotFoundError:
+    from metrics import financial_data_available, is_hit
+
 CONFIG_PATH = Path("config.yaml")
 PROCESSED_DIR = Path("data/processed")
 OUTPUT_DIR = Path("outputs/tables")
@@ -19,8 +24,10 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
 
 def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
                   min_films_director: int = 3, min_films_actor: int = 5,
-                  m: int = 1000, c: float = 6.0) -> pd.DataFrame:
+                  shrinkage_prior_films: float = 3.0,
+                  min_votes: int = 1000, min_rating: float = 7.0) -> pd.DataFrame:
     film_lookup = films.set_index("tmdb_id")
+    rating_baseline = float(films["vote_average"].mean())
     directors = credits[(credits["role"] == "crew") & (credits["job"] == "Director")]
     cast = credits[(credits["role"] == "cast") & (credits["cast_order"] == 0)]
 
@@ -33,17 +40,39 @@ def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
                 continue
             sub = film_lookup.loc[ids]
             avg_rating = float(sub["vote_average"].mean())
-            hit_share = float((sub["revenue"] > sub["budget"]).mean())
-            shrunk = (len(ids) / (len(ids) + 3)) * avg_rating + (3 / (len(ids) + 3)) * c
+            eligible = financial_data_available(sub)
+            hit_share = (
+                float(is_hit(sub.loc[eligible], min_votes, min_rating).mean())
+                if eligible.any()
+                else float("nan")
+            )
+            prior_weight = shrinkage_prior_films / (
+                len(ids) + shrinkage_prior_films
+            )
+            shrunk = (1 - prior_weight) * avg_rating + prior_weight * rating_baseline
             rows.append({
                 "name": name,
                 "role": label,
                 "n_films": len(ids),
+                "hit_eligible_films": int(eligible.sum()),
+                "hit_excluded_films": int((~eligible).sum()),
                 "avg_rating": round(avg_rating, 2),
                 "hit_share": round(hit_share, 3),
                 "shrunk_rating": round(shrunk, 2),
             })
-    return pd.DataFrame(rows).sort_values(["role", "shrunk_rating"], ascending=[True, False])
+    columns = [
+        "name",
+        "role",
+        "n_films",
+        "hit_eligible_films",
+        "hit_excluded_films",
+        "avg_rating",
+        "hit_share",
+        "shrunk_rating",
+    ]
+    return pd.DataFrame(rows, columns=columns).sort_values(
+        ["role", "shrunk_rating"], ascending=[True, False]
+    )
 
 
 def main() -> None:
@@ -55,8 +84,9 @@ def main() -> None:
         credits, films,
         cfg["talent"]["min_films_director"],
         cfg["talent"]["min_films_actor"],
-        cfg["adjusted_rating"]["m"],
-        cfg["adjusted_rating"]["c"],
+        cfg["talent"]["shrinkage_prior_films"],
+        cfg["hit"]["min_votes"],
+        cfg["hit"]["min_rating"],
     )
     out.to_csv(OUTPUT_DIR / "talent_read.csv", index=False)
     print(out.to_string(index=False))

@@ -19,13 +19,13 @@ Kept (helps answer "what is worth licensing?"):
 Left out on purpose: TMDb's `popularity` field (daily snapshot, not a stable property of the film).
 
 ## Success metric
-- **Headline:** Hit rate. A film is a hit if it clears a commercial bar (revenue > budget, i.e. profitable) AND an audience bar (vote_average >= min_rating with vote_count >= min_votes). Compare hit share in bundles (franchise collections) vs standalones. Speaks directly to the "weak middle entries" argument.
+- **Headline:** Film-weighted hit rate. A film is financially eligible only when budget and revenue are both known and positive. Among eligible films, a hit clears the commercial bar (revenue > budget) AND audience bar (vote_average >= min_rating with vote_count >= min_votes). Compare hit shares for franchise films and standalone films; do not average franchise bundle rates for this headline. Report each bundle's own eligible-film hit rate, excluded-financial count, and lowest vote-count-adjusted rating separately to expose weak listed entries.
 - **Audience signal:** Adjusted rating = Bayesian average pulling low-vote films toward the mean: (v/(v+m))*R + (m/(v+m))*C, with m = min_votes, C = overall mean vote_average.
 - **Sensitivity runs:** ROI (revenue/budget), absolute profit (revenue - budget), and a standardized composite. Report whether the recommendation holds under each.
 - Stated plainly in the memo: no licensing cost and no StreamVault viewing data exist, so every metric is a proxy.
 
 ## Judgement calls
-- Zero/missing money: treated as unknown, never as zero; excluded from commercial metrics; count reported. (N/A here — no zeros in this data, but rule stands for reruns.)
+- Zero, negative, or missing budget/revenue: treated as unknown; excluded from hit-rate, ROI, profit, and composite denominators (the composite includes hit status); exclusions are counted. (No such records in this cycle.)
 - Franchise definition: a film is a franchise member if `belongs_to_collection` is not null. Full collection completeness not verified (one API call per collection needed) — treated as a sensitivity, not a blocker.
 - Partial bundle: a collection counts as a franchise bundle only if >= 2 of its entries are on our list; singletons treated as standalone.
 - Pre-2000: report both windows (all years and 2000+); no inflation adjustment without a defensible index.
@@ -33,11 +33,12 @@ Left out on purpose: TMDb's `popularity` field (daily snapshot, not a stable pro
 - Minimum films per director/actor before reporting a signal: see config.yaml.
 - The 5 missing films: excluded with reason (ADR-002).
 - Duplicates: none found; merge rule not needed this cycle.
-- Shortlist ranking: by hit rate, then adjusted rating; flag candidates whose rank depends on a single missing/zero field.
+- Shortlist ranking: rank franchise packages by eligible-film hit rate, then mean adjusted rating, eligible count, and bundle name; expose each package's weakest listed entry. Rank standalone films by hit status and then adjusted rating. Missing/non-positive financials cannot make a title a hit.
 
 ## Thresholds
 - Hit: vote_count >= min_votes and vote_average >= min_rating (see config.yaml).
 - Talent: director min 3 films, actor min 5 films.
+- Talent rating shrinkage: use a 3-film prior toward this candidate list's overall average rating; report hit share using the headline hit definition and show how many credited films have eligible financials.
 
 ## Adjusted rating
 Bayesian-ish shrinkage toward the mean so low-vote titles do not dominate.

@@ -1,33 +1,42 @@
 # Memo to Kwame
 
-**From:**
-Data Consultant
+**From:** Data Consultant
+**Date:** 2026-11-23
+**Subject:** $14M licensing decision — franchise bundles vs standalone hits
 
-**Date:**
-2026-11-22
+## Recommendation
 
-**Subject:**
-$14M licensing decision — franchise bundles vs standalone hits
+Prioritize standalone titles when the goal is a higher chance that each title clears both the audience and profitability tests. The advantage is strong across all years but narrow after 2000. This is not a $14M price recommendation: franchise bundles lead on some revenue-based measures, and none of these measures includes licensing costs or StreamVault viewing.
 
-## What I found
-Standalone films clear both a money test (they make more than they cost) and an audience test (high rating with enough votes) far more often than franchise bundles do. Bundles look strong on total revenue, but that is driven by one or two blockbusters carrying several weak middle entries. If you license a bundle, you pay for films that would not earn their keep on their own.
+| Release window | Franchise films | Franchise hit rate | Standalone films | Standalone hit rate |
+|---|---:|---:|---:|---:|
+| All years | 87 | 63/87 (72.4%) | 25 | 24/25 (96.0%) |
+| 2000 onward | 56 | 40/56 (71.4%) | 15 | 11/15 (73.3%) |
 
-## What I built
-| What you asked for | Status | Evidence |
-|---|---|---|
-| Clean list of films with budget, revenue, rating, votes | Done | 112 films, all with complete money and rating data |
-| Franchise vs standalone comparison | Done | Hit rates: 96% standalones vs 72% bundles (all years) |
-| Two time windows (all years and 2000+) | Done | Standalones still lead in both; gap narrows from 24 points to 5 |
-| Shortlist of 3 franchises and 5 standalones | Done | Ranked by hit rate, then audience score |
-| Talent read (directors and lead actors) | Done | 19 names, each on 3-8 films |
-| Deal note for the strongest franchise | Done | The Godfather; audience rating is the number that drove it |
+Rates exclude films without positive, reported budget and revenue. None were excluded in this cycle.
 
-## What I recommend
-Spend the $14M on standalone hits, not franchise bundles. License The Shawshank Redemption, Schindler's List, Interstellar, Spirited Away, and Pulp Fiction first. If you must buy a bundle, only The Godfather, The Dark Knight, and The Lord of the Rings: The Return of the King clear both bars on their own — and even then, you are also buying their weaker entries.
+## Negotiation shortlist
 
-## What I could not stand behind
-- No licensing cost or viewing data exists, so every number is a proxy, not proof of profit.
-- 5 of 117 requested titles could not be found and were left out.
-- The request listed 127 titles but the file held 126; documented, not fixed.
-- We only know a film's own collection, not whether every entry of that collection is on the list, so a bundle's true strength may be overstated.
-- Money and rating figures are complete for these 112 films but may be missing on future refreshes.
+**Franchise packages** — ranked by hit rate, then average vote-count-adjusted rating. These describe only the listed films, not necessarily every title in the studio's package.
+
+| Package (titles present on the list) | Listed hits | Average adjusted rating | Weakest listed entry |
+|---|---:|---:|---|
+| The Lord of the Rings: Fellowship, Two Towers, Return of the King | 3/3 | 8.38 | The Two Towers (8.34) |
+| The Godfather I, II, III | 3/3 | 8.08 | The Godfather Part III (7.24) |
+| The Dark Knight: Batman Begins, The Dark Knight, The Dark Knight Rises | 3/3 | 7.94 | Batman Begins (7.66) |
+
+**Standalone titles** — each meets the hit test; adjusted ratings help separate close candidates: The Shawshank Redemption (8.65), Schindler's List (8.44), Interstellar (8.43), Spirited Away (8.41), and Pulp Fiction (8.40).
+
+## Talent signal
+
+Within this candidate list, Christopher Nolan (7 films; 7/7 hits) and Peter Jackson (6; 6/6) lead the directors by adjusted rating. Daniel Radcliffe (8; 8/8) and Tom Hanks (5; 5/5) lead the actors. These are associations in a selected list, not proof that talent causes success; the counts are small.
+
+## Deal note
+
+The Lord of the Rings Collection is the strongest listed franchise package: **3 of 3 financially eligible listed films meet the hit test**. Its weakest listed entry is *The Two Towers*, with an adjusted rating of 8.34. That hit rate is the clearest number supporting negotiation priority, not a basis for a bid ceiling. Without the license price, rights term, expected viewing, and delivery costs, this analysis cannot calculate what the package is worth to StreamVault; do not approve a premium from these proxies alone.
+
+## What remains uncertain
+
+- The supplied CSV has a `tmdb_id` header and 126 nonblank data rows; the header is not counted as a title or ID. Three rows are invalid (`-1`, `tt0468569`, and `N/A`), and six repeat an ID, leaving 117 unique positive numeric TMDb IDs. Five of those returned 404, so 112 films were analyzed. The brief's 127-title count is still one higher than the 126 supplied rows; the header does not explain the gap. That one unprovided candidate cannot be assessed, and the five 404s also leave their titles out of the analysis.
+- TMDB identifies a film's collection but does not confirm the full bundle contents; omitted weak entries could change the package assessment.
+- TMDB revenue and audience ratings are proxies for licensing value. No licensing offers, StreamVault viewing data, or comparable deal terms were available.
