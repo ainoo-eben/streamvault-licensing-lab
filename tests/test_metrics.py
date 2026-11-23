@@ -1,3 +1,5 @@
+"""Tests for financial eligibility, hit classification, ROI, and profit."""
+
 import pandas as pd
 import pytest
 
@@ -5,6 +7,7 @@ from src.metrics import financial_data_available, hit_rate, is_hit, profit, roi
 
 
 def test_missing_or_non_positive_financials_are_excluded() -> None:
+    """Only records with positive budget and revenue enter money metrics."""
     films = pd.DataFrame(
         {
             "budget": [100, None, 100, 0, 100],
@@ -30,6 +33,7 @@ def test_missing_or_non_positive_financials_are_excluded() -> None:
 
 
 def test_hit_rate_is_zero_when_no_financial_records_are_eligible() -> None:
+    """Avoid dividing by zero when every film lacks eligible financials."""
     films = pd.DataFrame(
         {
             "budget": [0, None],

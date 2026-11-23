@@ -19,6 +19,7 @@ STEPS = [
 
 
 def main() -> None:
+    """Run each pipeline stage in order, stopping immediately if one fails."""
     start = time.perf_counter()
     for step in STEPS:
         print(f"\n=== {step} ===")
@@ -26,6 +27,7 @@ def main() -> None:
         if result.returncode != 0:
             print(f"FAILED at {step} (exit {result.returncode})")
             sys.exit(result.returncode)
+    # Log runtime only after every stage succeeds and its output tables exist.
     elapsed = time.perf_counter() - start
     write_run_log(elapsed)
     print(f"\nAll steps completed in {elapsed:.2f}s")

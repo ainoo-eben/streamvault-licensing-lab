@@ -1,3 +1,5 @@
+"""Tests for current-list reconciliation in reports and run logs."""
+
 import pandas as pd
 import yaml
 
@@ -5,6 +7,7 @@ from src.report import data_quality_report, write_run_log
 
 
 def test_quality_report_and_run_log_use_current_input_counts(tmp_path) -> None:
+    """Report counts from fixtures and expose financial exclusions and runtime."""
     input_path = tmp_path / "ids.csv"
     input_path.write_text("tmdb_id\n1\nbad\n3\n", encoding="utf-8")
     processed_dir = tmp_path / "processed"

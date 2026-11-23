@@ -1,3 +1,5 @@
+"""Behavior tests for the comparisons, shortlists, and deal-note analysis."""
+
 import pandas as pd
 import pytest
 
@@ -13,6 +15,7 @@ from src.analysis import (
 def _film(
     tmdb_id: int, title: str, year: int, collection: str | None, is_hit: bool
 ) -> dict:
+    """Create a compact film row with configurable collection and hit outcome."""
     return {
         "tmdb_id": tmdb_id,
         "title": title,
@@ -27,6 +30,7 @@ def _film(
 
 
 def test_compare_windows_uses_film_weighted_rates_and_clear_counts() -> None:
+    """Confirm each title, not each bundle, has equal weight in comparisons."""
     frame = pd.DataFrame(
         [
             _film(1, "A: older", 1999, "Series A", True),
@@ -58,6 +62,7 @@ def test_compare_windows_uses_film_weighted_rates_and_clear_counts() -> None:
 
 
 def test_bundle_summary_identifies_lowest_adjusted_rating_entry() -> None:
+    """The weakest bundle entry is based on adjusted, not raw, rating."""
     frame = pd.DataFrame(
         [
             {
@@ -88,6 +93,7 @@ def test_bundle_summary_identifies_lowest_adjusted_rating_entry() -> None:
 
 
 def test_bundle_summary_excludes_unknown_financials_from_hit_rate() -> None:
+    """Unknown financials remain listed but do not enter the hit-rate denominator."""
     frame = pd.DataFrame(
         [
             {
@@ -121,6 +127,7 @@ def test_bundle_summary_excludes_unknown_financials_from_hit_rate() -> None:
 
 
 def test_shortlist_ranks_franchise_packages_and_explains_each_target() -> None:
+    """Franchise shortlist rows represent packages and disclose listed members."""
     frame = pd.DataFrame(
         [
             _film(1, "A: One", 2020, "Series A", True),
@@ -152,6 +159,7 @@ def test_shortlist_ranks_franchise_packages_and_explains_each_target() -> None:
 
 
 def test_deal_note_does_not_invent_a_price_ceiling() -> None:
+    """The observed hit rate supports priority, not an unsupported bid ceiling."""
     frame = pd.DataFrame(
         [
             _film(1, "A: One", 2020, "Series A", True),
@@ -173,6 +181,7 @@ def test_deal_note_does_not_invent_a_price_ceiling() -> None:
 
 
 def test_sensitivity_handles_groups_without_eligible_financials() -> None:
+    """Comparisons are unavailable when either group has no eligible films."""
     frame = pd.DataFrame(
         [
             {

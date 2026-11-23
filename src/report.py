@@ -30,6 +30,7 @@ def data_quality_report(
     processed_dir: Path | None = None,
     raw_dir: Path | None = None,
 ) -> str:
+    """Build a text report reconciling input, fetch, cache, and analysis counts."""
     with config_path.open("r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
     input_path = input_path or resolve_input_path(config)
@@ -95,6 +96,7 @@ def data_quality_report(
     }
     raw_detail_count = len(raw_detail_ids)
     raw_credit_count = len(raw_credit_ids)
+    # Count cache entries for this input separately from old quarterly-list files.
     current_detail_count = len(raw_detail_ids & requested_ids)
     current_credit_count = len(raw_credit_ids & requested_ids)
     stale_cache_count = len(raw_detail_ids - requested_ids) + len(
@@ -152,6 +154,7 @@ def write_run_log(
     processed_dir: Path = PROCESSED_DIR,
     input_path: Path | None = None,
 ) -> None:
+    """Write reconciled pipeline row counts and elapsed runtime to the run log."""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     if input_path is None:
         with CONFIG_PATH.open("r", encoding="utf-8") as handle:
@@ -181,6 +184,7 @@ def write_run_log(
 
 
 def main() -> None:
+    """Write and print the current data-quality report."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     report = data_quality_report()
     report_path = OUTPUT_DIR / "data_quality_report.txt"

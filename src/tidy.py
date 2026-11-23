@@ -26,6 +26,7 @@ FILM_FIELDS = [
 def _load_json_dir(
     directory: Path, requested_ids: set[int] | None = None
 ) -> list[dict[str, Any]]:
+    """Load JSON payloads in stable filename order, optionally limiting ids."""
     records: list[dict[str, Any]] = []
     requested_names = (
         {str(tmdb_id) for tmdb_id in requested_ids}
@@ -44,6 +45,7 @@ def build_films(
     details_dir: Path = RAW_DIR / "details",
     requested_ids: set[int] | None = None,
 ) -> pd.DataFrame:
+    """Flatten each movie-details response into one analysis-ready film row."""
     rows: list[dict[str, Any]] = []
     for movie in _load_json_dir(details_dir, requested_ids):
         collection = movie.get("belongs_to_collection")
@@ -75,6 +77,7 @@ def build_credits(
     credits_dir: Path = RAW_DIR / "credits",
     requested_ids: set[int] | None = None,
 ) -> pd.DataFrame:
+    """Flatten cast and crew arrays into one row per credited person and film."""
     rows: list[dict[str, Any]] = []
     for payload in _load_json_dir(credits_dir, requested_ids):
         tmdb_id = payload.get("id")
@@ -102,9 +105,11 @@ def build_credits(
 
 
 def build_analysis_table(films: pd.DataFrame, credits: pd.DataFrame) -> pd.DataFrame:
+    """Add per-film cast and director counts without multiplying film rows."""
     directors = credits[(credits["role"] == "crew") & (credits["job"] == "Director")]
     director_counts = directors.groupby("tmdb_id").size().rename("director_count")
     cast_counts = credits[credits["role"] == "cast"].groupby("tmdb_id").size().rename("cast_count")
+    # Aggregate credits before joining so multiple people cannot duplicate a film.
     out = films.merge(director_counts, on="tmdb_id", how="left")
     out = out.merge(cast_counts, on="tmdb_id", how="left")
     out["director_count"] = out["director_count"].fillna(0).astype(int)
@@ -113,6 +118,7 @@ def build_analysis_table(films: pd.DataFrame, credits: pd.DataFrame) -> pd.DataF
 
 
 def main() -> None:
+    """Flatten only current-list cache files and write the three processed tables."""
     config = load_config()
     input_rows = read_input_rows(resolve_input_path(config))
     requested_ids = {tmdb_id for tmdb_id, _ in input_rows if tmdb_id is not None}

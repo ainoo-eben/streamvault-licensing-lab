@@ -1,3 +1,5 @@
+"""Tests for nested-response flattening, input accounting, and table integrity."""
+
 import json
 
 import pandas as pd
@@ -9,6 +11,7 @@ from src.tidy import build_analysis_table, build_credits, build_films
 
 
 def test_tidy_builds_one_film_row_and_joinable_credits(tmp_path) -> None:
+    """Flatten nested details and credits while excluding stale cache files."""
     details_dir = tmp_path / "details"
     credits_dir = tmp_path / "credits"
     details_dir.mkdir()
@@ -64,6 +67,7 @@ def test_tidy_builds_one_film_row_and_joinable_credits(tmp_path) -> None:
 
 
 def test_integrity_checks_reject_duplicate_films_and_orphan_credits() -> None:
+    """Reject duplicate film rows and credits that cannot join to a film."""
     duplicate_films = pd.DataFrame({"tmdb_id": [1, 1]})
     films = pd.DataFrame({"tmdb_id": [1]})
     orphan_credits = pd.DataFrame({"tmdb_id": [2]})
@@ -75,6 +79,7 @@ def test_integrity_checks_reject_duplicate_films_and_orphan_credits() -> None:
 
 
 def test_input_parser_tracks_invalid_rows_and_sample_fallback(tmp_path, monkeypatch) -> None:
+    """Keep malformed rows visible and use the sample only for the default path."""
     input_path = tmp_path / "ids.csv"
     input_path.write_text("tmdb_id\n155\nbad\n0\n155\n", encoding="utf-8")
     assert read_input_rows(input_path) == [

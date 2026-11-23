@@ -18,6 +18,7 @@ OUTPUT_DIR = Path("outputs/tables")
 
 
 def load_config(path: Path = CONFIG_PATH) -> dict:
+    """Load thresholds and prior strength used by the talent analysis."""
     with path.open() as f:
         return yaml.safe_load(f)
 
@@ -26,6 +27,11 @@ def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
                   min_films_director: int = 3, min_films_actor: int = 5,
                   shrinkage_prior_films: float = 3.0,
                   min_votes: int = 1000, min_rating: float = 7.0) -> pd.DataFrame:
+    """Rank directors and lead actors using ratings and eligible-film hit share.
+
+    Rating averages are shrunk toward the candidate-list average so a small
+    filmography does not rank solely on a few unusually high-rated films.
+    """
     film_lookup = films.set_index("tmdb_id")
     rating_baseline = float(films["vote_average"].mean())
     directors = credits[(credits["role"] == "crew") & (credits["job"] == "Director")]
@@ -35,6 +41,7 @@ def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
     for label, subset, min_n in [("director", directors, min_films_director),
                                  ("actor", cast, min_films_actor)]:
         for name, grp in subset.groupby("name"):
+            # Count unique films so duplicate credit rows do not inflate sample size.
             ids = grp["tmdb_id"].unique()
             if len(ids) < min_n:
                 continue
@@ -46,6 +53,7 @@ def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
                 if eligible.any()
                 else float("nan")
             )
+            # Treat the configured prior as this many baseline-rated films.
             prior_weight = shrinkage_prior_films / (
                 len(ids) + shrinkage_prior_films
             )
@@ -76,6 +84,7 @@ def talent_signal(credits: pd.DataFrame, films: pd.DataFrame,
 
 
 def main() -> None:
+    """Read processed films and credits, then write the ranked talent table."""
     cfg = load_config()
     films = pd.read_parquet(PROCESSED_DIR / "films.parquet")
     credits = pd.read_parquet(PROCESSED_DIR / "credits.parquet")

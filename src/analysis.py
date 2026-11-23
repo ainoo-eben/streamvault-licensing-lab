@@ -24,11 +24,17 @@ OUTPUT_DIR = Path("outputs/tables")
 
 
 def load_config(path: Path = CONFIG_PATH) -> dict:
+    """Load analysis thresholds, windows, and rating configuration."""
     with path.open() as f:
         return yaml.safe_load(f)
 
 
 def classify(frame: pd.DataFrame, min_entries: int = 2) -> pd.DataFrame:
+    """Classify listed collections with enough candidate films as franchises.
+
+    A film in a TMDB collection is treated as standalone if too few of that
+    collection's entries appear in this candidate list.
+    """
     counts = frame.groupby("collection_name").size() if "collection_name" in frame else pd.Series(dtype=int)
     valid_collections = set(counts[counts >= min_entries].index) if len(counts) else set()
     out = frame.copy()
@@ -38,6 +44,7 @@ def classify(frame: pd.DataFrame, min_entries: int = 2) -> pd.DataFrame:
 
 
 def window(frame: pd.DataFrame, start_year: int) -> pd.DataFrame:
+    """Return a copy containing films released in or after ``start_year``."""
     return frame[frame["release_year"] >= start_year].copy()
 
 
@@ -48,6 +55,7 @@ def bundle_summary(
     m: int = 1000,
     c: float = 6.0,
 ) -> pd.DataFrame:
+    """Summarize listed titles per bundle, including eligible hit rates and weakest rating."""
     frame = frame.copy()
     frame["financially_eligible"] = financial_data_available(frame)
     frame["hit"] = is_hit(frame, min_votes, min_rating)
@@ -55,6 +63,7 @@ def bundle_summary(
     frame["hit_for_rate"] = frame["hit"].astype("Float64").where(
         frame["financially_eligible"]
     )
+    # Null out ineligible hit flags so they do not dilute the bundle hit rate.
     weakest_entries = (
         frame.sort_values(["bundle", "adjusted_rating", "title"])
         .drop_duplicates("bundle")[["bundle", "title", "adjusted_rating"]]
@@ -90,6 +99,7 @@ def bundle_summary(
 
 
 def compare_windows(frame: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Compare franchise and standalone film-level hit rates in both year windows."""
     min_votes = cfg["hit"]["min_votes"]
     min_rating = cfg["hit"]["min_rating"]
     rows = []
@@ -149,6 +159,7 @@ def compare_windows(frame: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 def shortlist(
     frame: pd.DataFrame, cfg: dict, n_franchise: int = 3, n_standalone: int = 5
 ) -> pd.DataFrame:
+    """Rank franchise packages and standalone titles with reasons for selection."""
     min_votes = cfg["hit"]["min_votes"]
     min_rating = cfg["hit"]["min_rating"]
     f = frame.copy()
@@ -171,6 +182,7 @@ def shortlist(
     ).head(n_franchise)
 
     standalone_films = f[~f["is_franchise"]].copy()
+    # A hit flag dominates the ranking; adjusted rating breaks ties among hits.
     standalone_films["rank_score"] = (
         standalone_films["hit"].astype(int) * 100
         + standalone_films["adjusted_rating"]
@@ -263,6 +275,7 @@ def shortlist(
 
 
 def sensitivity(frame: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Recompute group comparisons across alternate thresholds and definitions."""
     min_votes_opts = [500, 1000, 2000]
     min_rating_opts = [6.5, 7.0, 7.5]
     metrics = ["hit_rate", "roi", "profit", "composite"]
@@ -313,6 +326,7 @@ def sensitivity(frame: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 
 
 def deal_note(frame: pd.DataFrame, cfg: dict) -> str:
+    """Describe the leading listed franchise without implying a maximum bid."""
     sl = shortlist(frame, cfg)
     top_franchises = sl[sl["group"] == "franchise"]
     if top_franchises.empty:
@@ -339,6 +353,7 @@ def deal_note(frame: pd.DataFrame, cfg: dict) -> str:
 
 
 def main() -> None:
+    """Generate the comparison, bundle, shortlist, sensitivity, and deal-note outputs."""
     cfg = load_config()
     frame = pd.read_parquet(PROCESSED_DIR / "analysis_table.parquet")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

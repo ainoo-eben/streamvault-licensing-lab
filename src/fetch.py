@@ -22,11 +22,13 @@ BASE_URL = "https://api.themoviedb.org/3"
 
 
 def load_config(path: Path = CONFIG_PATH) -> dict[str, Any]:
+    """Load pipeline settings from the project's YAML configuration."""
     with path.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 
 
 def load_api_key(config: dict[str, Any]) -> str:
+    """Read the TMDB key from the environment, then fall back to the local .env."""
     env_name = config["tmdb"]["api_key_env"]
     key = os.environ.get(env_name)
     if not key:
@@ -44,9 +46,11 @@ def load_api_key(config: dict[str, Any]) -> str:
 
 
 def resolve_input_path(config: dict[str, Any]) -> Path:
+    """Use the configured candidate file, or the tracked sample if it is missing."""
     configured = Path(config.get("data", {}).get("input_csv", INPUT_CSV))
     if configured.is_file():
         return configured
+    # Keep a missing custom path visible instead of silently substituting sample data.
     if configured == INPUT_CSV and SAMPLE_INPUT_CSV.is_file():
         return SAMPLE_INPUT_CSV
     raise FileNotFoundError(
@@ -56,6 +60,11 @@ def resolve_input_path(config: dict[str, Any]) -> Path:
 
 
 def read_input_rows(path: Path = INPUT_CSV) -> list[tuple[Any, str]]:
+    """Read each CSV data row as (positive numeric TMDB id or None, original text).
+
+    DictReader consumes the column header separately; invalid values are retained
+    with a None id so the fetch ledger can account for every data row.
+    """
     rows: list[tuple[Any, str]] = []
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -77,6 +86,7 @@ def read_input_rows(path: Path = INPUT_CSV) -> list[tuple[Any, str]]:
 
 
 def _sleep_rate_limit(config: dict[str, Any]) -> None:
+    """Wait long enough to stay under the configured requests-per-10-seconds cap."""
     per_10s = config["tmdb"].get("rate_limit_per_10s", 35)
     delay = 10.0 / max(per_10s, 1)
     time.sleep(delay)
@@ -84,6 +94,7 @@ def _sleep_rate_limit(config: dict[str, Any]) -> None:
 
 def fetch_one(session: requests.Session, url: str, params: dict[str, Any],
               retries: int, timeout: int) -> tuple[int, Any]:
+    """Request one endpoint; retry network, rate-limit, and server failures."""
     last_status = 0
     for attempt in range(retries):
         try:
@@ -97,6 +108,7 @@ def fetch_one(session: requests.Session, url: str, params: dict[str, Any],
         if response.status_code == 404:
             return 404, None
         if response.status_code == 429 or response.status_code >= 500:
+            # Honor TMDB's requested delay; otherwise use exponential backoff.
             retry_after = response.headers.get("Retry-After")
             wait = float(retry_after) if retry_after else 2 ** attempt
             time.sleep(wait)
@@ -106,15 +118,22 @@ def fetch_one(session: requests.Session, url: str, params: dict[str, Any],
 
 
 def cache_path(endpoint: str, tmdb_id: int) -> Path:
+    """Build the raw-JSON path for one TMDB endpoint and movie id."""
     return RAW_DIR / endpoint / f"{tmdb_id}.json"
 
 
 def is_cached(tmdb_id: int) -> bool:
+    """Only treat a movie as cached when both details and credits are present."""
     return cache_path("details", tmdb_id).exists() and cache_path("credits", tmdb_id).exists()
 
 
 def fetch_movie(session: requests.Session, tmdb_id: int, api_key: str,
                config: dict[str, Any]) -> tuple[str, dict[str, Any] | None, dict[str, Any] | None]:
+    """Fetch details and credits, returning a ledger status and both payloads.
+
+    A film is successful only when both endpoints return data. TMDB may redirect
+    an obsolete id to another id; that response is kept but marked redirected.
+    """
     params = {"api_key": api_key}
     timeout = config["tmdb"].get("timeout_s", 30)
     retries = config["tmdb"].get("retries", 3)
@@ -141,6 +160,7 @@ def fetch_movie(session: requests.Session, tmdb_id: int, api_key: str,
 
 
 def main() -> None:
+    """Fetch uncached unique ids and write one status row per input data row."""
     config = load_config()
     api_key = load_api_key(config)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -152,6 +172,7 @@ def main() -> None:
     seen: set[int] = set()
     ledger_rows: list[dict[str, Any]] = []
 
+    # Reuse a session for connection pooling and send JSON-oriented requests.
     session = requests.Session()
     session.headers.update({"Accept": "application/json"})
 
@@ -164,6 +185,7 @@ def main() -> None:
             continue
         seen.add(tmdb_id)
 
+        # A partial cache is not enough: missing details or credits must be fetched.
         if is_cached(tmdb_id):
             ledger_rows.append({"id": tmdb_id, "status": "ok"})
             continue
@@ -178,6 +200,7 @@ def main() -> None:
 
         ledger_rows.append({"id": tmdb_id, "status": status})
 
+    # Keep invalid, duplicate, failed, and successful rows so list totals reconcile.
     with LEDGER_PATH.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=["id", "status"])
         writer.writeheader()
