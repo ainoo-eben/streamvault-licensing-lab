@@ -39,7 +39,7 @@ No duplicate films to merge.
 ## Reconciliation
 | Stage | Rows | Delta | Reason |
 |---|---:|---:|---|
-| Rows in file | 126 | | brief says 127 (unexplained) |
+| Rows in file | 126 | | brief says 127 (1 missing value) |
 | Missing / malformed / non-positive | 3 | -3 | Not sent to the API |
 | Extra duplicate occurrences | 6 | -6 | Same id repeated |
 | Unique valid ids | 117 | | |
